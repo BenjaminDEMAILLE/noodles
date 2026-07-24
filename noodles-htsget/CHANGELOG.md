@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+  * htsget: Update to base64 0.23.0.
+
 ## 0.11.0 - 2026-05-06
 
 ### Changed
