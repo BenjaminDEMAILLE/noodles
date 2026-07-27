@@ -117,6 +117,8 @@
 
   * cram: Raise minimum supported Rust version (MSRV) to 1.88.0.
 
+  * cram: Update to lzma-rust2 0.16.1.
+
   * cram/file_definition: Return an array reference (`&[u8; 20]`) from
     `FileDefinition::file_id`.
 
