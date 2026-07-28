@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+  * vcf/header/parser/record/value/map/format/number: Parse VCF 4.4 number for
+    ploidy (`P`).
+
+    See _The Variant Call Format Specification: VCFv4.4 and BCFv2.2_
+    (2025-11-05) § 1.4.4 "Individual format field format".
+
 ## 0.90.0 - 2026-07-24
 
 ### Changed
