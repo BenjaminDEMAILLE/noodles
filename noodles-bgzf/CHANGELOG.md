@@ -4,11 +4,15 @@
 
 ### Changed
 
-  * bgzf/io/multithreaded_reader: Use local thread pool for inflate tasks.
+  * bgzf/io: Use local thread pool for inflate/deflate tasks ([#409]).
 
-    `MultithreadedReader` no longer uses rayon's default global thread pool for
-    tasks. A pool is created exclusively for the reader. This restores
-    `MultithreadedReader::with_worker_count` to set the number of workers.
+    `MultithreadedReader` and `MultithreadedWriter` no longer uses rayon's
+    default global thread pool for tasks. Each is created with its own
+    exclusive thread pool. This restores
+    `MultithreadedReader::with_worker_count` and
+    `MultithreadedWriter::with_worker_count` to set the number of workers.
+
+[#409]: https://github.com/zaeleus/noodles/issues/409
 
 ## 0.49.0 - 2026-07-24
 
