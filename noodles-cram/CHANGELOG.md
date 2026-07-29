@@ -6,6 +6,12 @@
 
   * cram: Update to lzma-rust2 0.18.0.
 
+### Fixed
+
+  * cram/crai/io/reader: Clear line buffer when reading index ([#408]).
+
+[#408]: https://github.com/zaeleus/noodles/pull/408
+
 ## 0.96.0 - 2026-07-24
 
 ### Changed
