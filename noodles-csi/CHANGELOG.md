@@ -7,6 +7,9 @@
   * csi/async/io/writer/index/reference_sequences: Write reference sequence
     count.
 
+  * csi/async/io/writer/index/reference_sequences/bins: Find minimum record
+    start position.
+
 ## 0.58.0 - 2026-07-24
 
 ### Changed
