@@ -1,6 +1,7 @@
 //! CSI index reader.
 
 pub(crate) mod header;
+mod magic_number;
 pub mod reference_sequences;
 
 use std::{
@@ -10,7 +11,10 @@ use std::{
 };
 
 pub use self::header::read_header;
-use self::{header::read_aux, reference_sequences::read_reference_sequences};
+use self::{
+    header::read_aux, magic_number::read_magic_number,
+    reference_sequences::read_reference_sequences,
+};
 use super::{
     Index,
     num::{read_i32_le, read_u64_le},
@@ -22,7 +26,7 @@ pub enum ReadError {
     /// I/O error.
     Io(io::Error),
     /// The magic number is invalid.
-    InvalidMagicNumber([u8; 4]),
+    InvalidMagicNumber(magic_number::ReadError),
     /// The min shift is invalid.
     InvalidMinShift(num::TryFromIntError),
     /// The depth is invalid.
@@ -69,7 +73,7 @@ pub(super) fn read_index<R>(reader: &mut R) -> Result<Index, ReadError>
 where
     R: Read,
 {
-    read_magic(reader)?;
+    read_magic_number(reader).map_err(ReadError::InvalidMagicNumber)?;
 
     let min_shift = read_min_shift(reader)?;
     let depth = read_depth(reader)?;
@@ -95,22 +99,6 @@ where
     }
 
     Ok(builder.build())
-}
-
-fn read_magic<R>(reader: &mut R) -> Result<(), ReadError>
-where
-    R: Read,
-{
-    use crate::io::MAGIC_NUMBER;
-
-    let mut magic = [0; 4];
-    reader.read_exact(&mut magic)?;
-
-    if magic == MAGIC_NUMBER {
-        Ok(())
-    } else {
-        Err(ReadError::InvalidMagicNumber(magic))
-    }
 }
 
 fn read_min_shift<R>(reader: &mut R) -> Result<u8, ReadError>
@@ -143,37 +131,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn test_read_magic() {
-        let data = b"CSI\x01";
-        let mut reader = &data[..];
-        assert!(read_magic(&mut reader).is_ok());
-    }
-
-    #[test]
-    fn test_read_magic_with_invalid_magic_number() {
-        let data = [];
-        let mut reader = &data[..];
-        assert!(matches!(
-            read_magic(&mut reader),
-            Err(ReadError::Io(e)) if e.kind() == io::ErrorKind::UnexpectedEof
-        ));
-
-        let data = b"CSI";
-        let mut reader = &data[..];
-        assert!(matches!(
-            read_magic(&mut reader),
-            Err(ReadError::Io(e)) if e.kind() == io::ErrorKind::UnexpectedEof
-        ));
-
-        let data = b"MThd";
-        let mut reader = &data[..];
-        assert!(matches!(
-            read_magic(&mut reader),
-            Err(ReadError::InvalidMagicNumber([b'M', b'T', b'h', b'd']))
-        ));
-    }
 
     #[test]
     fn test_read_min_shift() -> Result<(), ReadError> {
