@@ -22,12 +22,16 @@ pub(super) fn write_bins<W>(
 where
     W: Write,
 {
-    let mut n_bin =
-        i32::try_from(bins.len()).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
-
-    if metadata.is_some() {
-        n_bin += 1;
-    }
+    let n_bin = i32::try_from(bins.len())
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))
+        .and_then(|n| {
+            if metadata.is_some() {
+                n.checked_add(1)
+                    .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "n_bin overflow"))
+            } else {
+                Ok(n)
+            }
+        })?;
 
     write_i32_le(writer, n_bin)?;
 
