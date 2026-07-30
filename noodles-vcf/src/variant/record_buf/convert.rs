@@ -5,6 +5,20 @@ use crate::{Header, variant::Record};
 
 impl RecordBuf {
     /// Converts a variant record to a buffer.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use noodles_vcf::{self as vcf, variant::RecordBuf};
+    ///
+    /// let header = vcf::Header::default();
+    /// let record = vcf::Record::default();
+    ///
+    /// let record_buf = RecordBuf::try_from_variant_record(&header, &record)?;
+    ///
+    /// assert_eq!(record_buf, RecordBuf::default());
+    /// # Ok::<_, std::io::Error>(())
+    /// ```
     pub fn try_from_variant_record<R>(header: &Header, record: &R) -> io::Result<Self>
     where
         R: Record + ?Sized,
