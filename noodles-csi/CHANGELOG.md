@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+  * csi/async/io/writer/index/reference_sequences: Write reference sequence
+    count.
+
 ## 0.58.0 - 2026-07-24
 
 ### Changed
