@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.88.0 - 2026-07-31
+
+### Changed
+
+  * sam: Sync dependencies.
+
 ## 0.87.0 - 2026-07-24
 
 ### Changed
