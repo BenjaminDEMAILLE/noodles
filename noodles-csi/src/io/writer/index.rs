@@ -1,18 +1,22 @@
 pub(crate) mod header;
+mod magic_number;
 mod reference_sequences;
 
 use std::io::{self, Write};
 
 pub use self::header::write_header;
-use self::{header::write_aux, reference_sequences::write_reference_sequences};
+use self::{
+    header::write_aux, magic_number::write_magic_number,
+    reference_sequences::write_reference_sequences,
+};
 use super::num::{write_i32_le, write_u64_le};
-use crate::{BinningIndex, Index, io::MAGIC_NUMBER};
+use crate::{BinningIndex, Index};
 
 pub(super) fn write_index<W>(writer: &mut W, index: &Index) -> io::Result<()>
 where
     W: Write,
 {
-    write_magic(writer)?;
+    write_magic_number(writer)?;
 
     let min_shift = i32::from(index.min_shift());
     write_i32_le(writer, min_shift)?;
@@ -28,24 +32,4 @@ where
     }
 
     Ok(())
-}
-
-fn write_magic<W>(writer: &mut W) -> io::Result<()>
-where
-    W: Write,
-{
-    writer.write_all(&MAGIC_NUMBER)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_write_magic() -> io::Result<()> {
-        let mut buf = Vec::new();
-        write_magic(&mut buf)?;
-        assert_eq!(buf, MAGIC_NUMBER);
-        Ok(())
-    }
 }
