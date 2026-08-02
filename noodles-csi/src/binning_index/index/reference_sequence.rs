@@ -305,40 +305,36 @@ mod tests {
 
     #[cfg(not(target_pointer_width = "16"))]
     #[test]
-    fn test_query() -> Result<(), noodles_core::position::TryFromIntError> {
+    fn test_query() {
         let reference_sequence = ReferenceSequence::new(Default::default(), Vec::new(), None);
-        let end = usize::try_from(i32::MAX).and_then(Position::try_from)?;
+        let end = const { Position::new(i32::MAX as usize).unwrap() };
 
         assert!(matches!(
             reference_sequence.query(MIN_SHIFT, DEPTH, ..=end),
             Err(e) if e.kind() == io::ErrorKind::InvalidInput,
         ));
-
-        Ok(())
     }
 
     #[test]
-    fn test_reg2bin() -> Result<(), noodles_core::position::TryFromIntError> {
+    fn test_reg2bin() {
         const MIN_SHIFT: u8 = 4;
         const DEPTH: u8 = 2;
 
-        let start = Position::try_from(8)?;
+        let start = const { Position::new(8).unwrap() };
         let end = start;
         assert_eq!(reg2bin(start, end, MIN_SHIFT, DEPTH), 9);
 
-        let end = Position::try_from(13)?;
+        let end = const { Position::new(13).unwrap() };
         assert_eq!(reg2bin(start, end, MIN_SHIFT, DEPTH), 9);
 
-        let end = Position::try_from(16)?;
+        let end = const { Position::new(16).unwrap() };
         assert_eq!(reg2bin(start, end, MIN_SHIFT, DEPTH), 9);
 
-        let end = Position::try_from(17)?;
+        let end = const { Position::new(17).unwrap() };
         assert_eq!(reg2bin(start, end, MIN_SHIFT, DEPTH), 1);
 
-        let end = Position::try_from(143)?;
+        let end = const { Position::new(143).unwrap() };
         assert_eq!(reg2bin(start, end, MIN_SHIFT, DEPTH), 0);
-
-        Ok(())
     }
 
     #[test]
@@ -372,18 +368,27 @@ mod tests {
             assert_eq!(actual, expected);
         }
 
-        t(Position::try_from(1)?, Position::try_from(16)?, &[0, 1, 9]);
-        t(Position::try_from(9)?, Position::try_from(13)?, &[0, 1, 9]);
+        t(
+            const { Position::new(1).unwrap() },
+            const { Position::new(16).unwrap() },
+            &[0, 1, 9],
+        );
 
         t(
-            Position::try_from(36)?,
-            Position::try_from(67)?,
+            const { Position::new(9).unwrap() },
+            const { Position::new(13).unwrap() },
+            &[0, 1, 9],
+        );
+
+        t(
+            const { Position::new(36).unwrap() },
+            const { Position::new(67).unwrap() },
             &[0, 1, 11, 12, 13],
         );
 
         t(
-            Position::try_from(49)?,
-            Position::try_from(143)?,
+            const { Position::new(49).unwrap() },
+            const { Position::new(143).unwrap() },
             &[0, 1, 2, 12, 13, 14, 15, 16, 17],
         );
 
