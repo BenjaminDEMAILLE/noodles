@@ -1,6 +1,6 @@
 [package]
 name = "noodles-bam"
-version = "0.93.0"
+version = "0.94.0"
 authors = ["Michael Macias <zaeleus@gmail.com>"]
 license.workspace = true
 edition.workspace = true
@@ -28,13 +28,13 @@ memchr.workspace = true
 pin-project-lite = { workspace = true, optional = true }
 tokio = { workspace = true, optional = true, features = ["fs", "io-util"] }
 
-noodles-bgzf = { path = "../noodles-bgzf", version = "0.50.0" }
+noodles-bgzf = { path = "../noodles-bgzf", version = "0.51.0" }
 noodles-core = { path = "../noodles-core", version = "0.20.0" }
-noodles-csi = { path = "../noodles-csi", version = "0.59.0" }
-noodles-sam = { path = "../noodles-sam", version = "0.88.0" }
+noodles-csi = { path = "../noodles-csi", version = "0.60.0" }
+noodles-sam = { path = "../noodles-sam", version = "0.89.0" }
 
 [dev-dependencies]
-noodles-sam = { path = "../noodles-sam", version = "0.88.0", features = ["async"] }
+noodles-sam = { path = "../noodles-sam", version = "0.89.0", features = ["async"] }
 tokio = { workspace = true, features = ["io-std", "macros", "rt-multi-thread"] }
 
 [lints]
