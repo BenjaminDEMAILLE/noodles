@@ -23,13 +23,7 @@ where
     write_reference_sequence_count(writer, reference_sequences.len())?;
 
     for reference_sequence in reference_sequences {
-        write_bins(
-            writer,
-            depth,
-            reference_sequence.bins(),
-            reference_sequence.index(),
-            reference_sequence.metadata(),
-        )?;
+        write_reference_sequence(writer, depth, reference_sequence)?;
     }
 
     Ok(())
@@ -46,4 +40,21 @@ where
         .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
 
     write_i32_le(writer, n)
+}
+
+fn write_reference_sequence<W>(
+    writer: &mut W,
+    depth: u8,
+    reference_sequence: &ReferenceSequence<BinnedIndex>,
+) -> io::Result<()>
+where
+    W: Write,
+{
+    write_bins(
+        writer,
+        depth,
+        reference_sequence.bins(),
+        reference_sequence.index(),
+        reference_sequence.metadata(),
+    )
 }
