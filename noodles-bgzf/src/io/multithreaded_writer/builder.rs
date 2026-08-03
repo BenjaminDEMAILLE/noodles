@@ -60,10 +60,10 @@ impl Builder {
     {
         use super::{State, spawn_writer};
 
-        let worker_count = rayon::current_num_threads();
+        let worker_count = self.worker_count.get();
 
         let pool = rayon::ThreadPoolBuilder::new()
-            .num_threads(self.worker_count.get())
+            .num_threads(worker_count)
             .build()
             .unwrap();
 
