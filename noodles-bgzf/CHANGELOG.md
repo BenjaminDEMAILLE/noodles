@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+  * bgzf/io/multithreaded_reader: Fix worker count selection ([#410]).
+
+    The worker count is synced to the number of managed buffers, and this
+    previously used rayon's global thread pool's thread count instead of the
+    local pool. This also unintentionally initialized rayon's global thread
+    pool, even though it may go unused.
+
+[#410]: https://github.com/zaeleus/noodles/issues/410
+
 ## 0.50.0 - 2026-07-31
 
 ### Changed
