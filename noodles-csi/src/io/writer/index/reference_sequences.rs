@@ -20,9 +20,7 @@ pub(super) fn write_reference_sequences<W>(
 where
     W: Write,
 {
-    let n_ref = i32::try_from(reference_sequences.len())
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
-    write_i32_le(writer, n_ref)?;
+    write_reference_sequence_count(writer, reference_sequences.len())?;
 
     for reference_sequence in reference_sequences {
         write_bins(
@@ -35,4 +33,17 @@ where
     }
 
     Ok(())
+}
+
+fn write_reference_sequence_count<W>(
+    writer: &mut W,
+    reference_sequence_count: usize,
+) -> io::Result<()>
+where
+    W: Write,
+{
+    let n = i32::try_from(reference_sequence_count)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+
+    write_i32_le(writer, n)
 }
