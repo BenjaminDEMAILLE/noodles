@@ -20,18 +20,7 @@ pub(super) async fn write_bins<W>(
 where
     W: AsyncWrite + Unpin,
 {
-    let n_bin = i32::try_from(bins.len())
-        .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))
-        .and_then(|n| {
-            if metadata.is_some() {
-                n.checked_add(1)
-                    .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "n_bin overflow"))
-            } else {
-                Ok(n)
-            }
-        })?;
-
-    writer.write_i32_le(n_bin).await?;
+    write_bin_count(writer, metadata.is_some(), bins.len()).await?;
 
     for (&id, bin) in bins {
         let first_record_start_position = first_record_start_position(index, id);
@@ -43,6 +32,24 @@ where
     }
 
     Ok(())
+}
+
+async fn write_bin_count<W>(writer: &mut W, has_metadata: bool, bin_count: usize) -> io::Result<()>
+where
+    W: AsyncWrite + Unpin,
+{
+    let n = i32::try_from(bin_count)
+        .map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))
+        .and_then(|n| {
+            if has_metadata {
+                n.checked_add(1)
+                    .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "n_bin overflow"))
+            } else {
+                Ok(n)
+            }
+        })?;
+
+    writer.write_i32_le(n).await
 }
 
 async fn write_bin<W>(
@@ -79,4 +86,33 @@ fn first_record_start_position(index: &BinnedIndex, mut id: usize) -> bgzf::Virt
     }
 
     min_position
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_write_bin_count() -> io::Result<()> {
+        let mut buf = Vec::new();
+
+        buf.clear();
+        write_bin_count(&mut buf, false, 0).await?;
+        assert_eq!(buf, [0x00, 0x00, 0x00, 0x00]);
+
+        buf.clear();
+        write_bin_count(&mut buf, true, 0).await?;
+        assert_eq!(buf, [0x01, 0x00, 0x00, 0x00]);
+
+        #[cfg(not(target_pointer_width = "16"))]
+        {
+            buf.clear();
+            assert!(matches!(
+                write_bin_count(&mut buf, true, usize::MAX).await,
+                Err(e) if e.kind() == io::ErrorKind::InvalidInput
+            ));
+        }
+
+        Ok(())
+    }
 }
