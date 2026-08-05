@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+  * sam/record: Borrow quality scores when encoding an alignment record.
+
+    `Record` did not override `alignment::record::Record::quality_scores_ref`,
+    so it fell back to the boxed default, costing an allocation and a dynamic
+    dispatch per base. It now returns `QualityScoresRef::Offset`, which is the
+    variant that describes SAM quality scores.
+
 ## 0.89.0 - 2026-08-03
 
 ### Changed
