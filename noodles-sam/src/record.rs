@@ -319,7 +319,46 @@ impl crate::alignment::Record for Record {
         Box::new(self.quality_scores())
     }
 
+    fn quality_scores_ref(&self) -> crate::alignment::record::QualityScoresRef<'_> {
+        const OFFSET: u8 = b'!';
+        crate::alignment::record::QualityScoresRef::Offset(self.0.quality_scores(), OFFSET)
+    }
+
     fn data(&self) -> Box<dyn crate::alignment::record::Data<'_> + '_> {
         Box::new(self.data())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::alignment::record::{QualityScoresRef, Record as _};
+
+    use super::*;
+
+    #[test]
+    fn test_quality_scores_ref() -> Result<(), Box<dyn std::error::Error>> {
+        let src = b"r0\t4\t*\t0\t255\t*\t*\t0\t0\tACGT\tNDLS";
+        let record = Record::try_from(&src[..])?;
+
+        assert!(matches!(
+            record.quality_scores_ref(),
+            QualityScoresRef::Offset(s, b'!') if s == b"NDLS"
+        ));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_quality_scores_ref_with_missing_quality_scores()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let src = b"r0\t4\t*\t0\t255\t*\t*\t0\t0\tACGT\t*";
+        let record = Record::try_from(&src[..])?;
+
+        assert!(matches!(
+            record.quality_scores_ref(),
+            QualityScoresRef::Offset(s, _) if s.is_empty()
+        ));
+
+        Ok(())
     }
 }
