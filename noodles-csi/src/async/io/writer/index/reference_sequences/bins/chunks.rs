@@ -37,3 +37,30 @@ where
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use noodles_bgzf as bgzf;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn test_write_chunks() -> io::Result<()> {
+        let mut buf = Vec::new();
+        let chunk = Chunk::new(
+            bgzf::VirtualPosition::from(8),
+            bgzf::VirtualPosition::from(13),
+        );
+        write_chunks(&mut buf, &[chunk]).await?;
+
+        let expected = [
+            0x01, 0x00, 0x00, 0x00, // n_chunk = 1
+            0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // chunk_beg[0] = 8
+            0x0d, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // chunk_end[0] = 13
+        ];
+
+        assert_eq!(buf, expected);
+
+        Ok(())
+    }
+}
