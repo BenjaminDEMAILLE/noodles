@@ -135,10 +135,16 @@ where
             self.add_reference_sequences_until(reference_sequence_count - 1);
         }
 
+        let reference_sequences = self
+            .reference_sequences
+            .into_iter()
+            .map(|reference_sequence| reference_sequence.optimize())
+            .collect();
+
         let mut builder = Index::builder()
             .set_min_shift(self.min_shift)
             .set_depth(self.depth)
-            .set_reference_sequences(self.reference_sequences)
+            .set_reference_sequences(reference_sequences)
             .set_unplaced_unmapped_record_count(self.unplaced_unmapped_record_count);
 
         if let Some(header) = self.header {

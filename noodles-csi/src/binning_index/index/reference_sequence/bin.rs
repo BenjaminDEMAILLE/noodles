@@ -9,7 +9,7 @@ pub(crate) const METADATA_CHUNK_COUNT: u32 = 2;
 /// A binning index reference sequence bin.
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct Bin {
-    chunks: Vec<Chunk>,
+    pub(super) chunks: Vec<Chunk>,
 }
 
 impl Bin {

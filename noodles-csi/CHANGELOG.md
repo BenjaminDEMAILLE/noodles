@@ -1,5 +1,16 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+  * csi/binning_index/indexer: Optimize bins ([#406]).
+
+    Small bins are now merged into its parent on build. This is an optimization
+    for size, and previously built indices remain correct.
+
+[#406]: https://github.com/zaeleus/noodles/pull/406
+
 ## 0.60.0 - 2026-08-03
 
 ### Changed

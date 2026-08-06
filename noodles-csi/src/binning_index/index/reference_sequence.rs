@@ -228,6 +228,107 @@ where
 
         metadata.update(is_mapped, chunk);
     }
+
+    pub(crate) fn optimize(mut self) -> Self {
+        const MIN_COMPRESSED_SIZE: u64 = 1 << 16;
+
+        let mut bins = IndexMap::with_capacity(self.bins.len());
+
+        let mut ids: Vec<_> = self.bins.keys().copied().collect();
+        ids.sort_unstable();
+
+        for id in ids.iter().rev() {
+            // SAFETY: The set of IDs is equivalent to the set of bin keys.
+            let bin = self.bins.swap_remove(id).unwrap();
+
+            let Some(pid) = parent_id(*id) else {
+                bins.insert(*id, bin);
+                continue;
+            };
+
+            let size = bin_compressed_span(&bin);
+
+            if size < MIN_COMPRESSED_SIZE
+                && let Some(parent_bin) = self.bins.get_mut(&pid)
+            {
+                parent_bin.chunks.extend(bin.chunks);
+            } else {
+                bins.insert(*id, bin);
+            }
+        }
+
+        for bin in bins.values_mut() {
+            bin.chunks = merge_chunks(bin.chunks());
+        }
+
+        Self::new(bins, self.index, self.metadata)
+    }
+}
+
+fn bin_compressed_span(bin: &Bin) -> u64 {
+    let chunks = bin.chunks();
+
+    let (first_chunk, last_chunk) = if chunks.is_empty() {
+        return 0;
+    } else if chunks.len() == 1 {
+        let chunk = chunks[0];
+        (chunk, chunk)
+    } else {
+        chunks_minmax(chunks)
+    };
+
+    let start = first_chunk.start().compressed();
+    let end = last_chunk.end().compressed();
+
+    end - start
+}
+
+fn chunks_minmax(chunks: &[Chunk]) -> (Chunk, Chunk) {
+    let chunk = &chunks[0];
+    let (mut min, mut max) = (chunk, chunk);
+
+    for chunk in chunks.iter().skip(1) {
+        if chunk.start() < min.start() {
+            min = chunk;
+        }
+
+        if chunk.start() > max.start() {
+            max = chunk;
+        }
+    }
+
+    (*min, *max)
+}
+
+fn merge_chunks(chunks: &[Chunk]) -> Vec<Chunk> {
+    let mut chunks = chunks.to_vec();
+
+    if chunks.is_empty() {
+        return chunks;
+    }
+
+    chunks.sort_unstable_by_key(|c| c.start());
+
+    // At worst, no chunks are merged, and the resulting list will be the same size as the input.
+    let mut merged_chunks = Vec::with_capacity(chunks.len());
+
+    // `chunks` is guaranteed to be non-empty.
+    let mut current_chunk = chunks[0];
+
+    for next_chunk in chunks.iter().skip(1) {
+        if current_chunk.end().compressed() >= next_chunk.start().compressed() {
+            if current_chunk.end() < next_chunk.end() {
+                current_chunk = Chunk::new(current_chunk.start(), next_chunk.end());
+            }
+        } else {
+            merged_chunks.push(current_chunk);
+            current_chunk = *next_chunk;
+        }
+    }
+
+    merged_chunks.push(current_chunk);
+
+    merged_chunks
 }
 
 impl<I> binning_index::ReferenceSequence for ReferenceSequence<I>
@@ -313,6 +414,63 @@ mod tests {
             reference_sequence.query(MIN_SHIFT, DEPTH, ..=end),
             Err(e) if e.kind() == io::ErrorKind::InvalidInput,
         ));
+    }
+
+    #[test]
+    fn test_optimize() {
+        let bins = [
+            (0, vec![((0, 0), (16384, 0))]),
+            (1, vec![((0, 0), (32768, 0))]),
+            (2, vec![((0, 0), (131072, 0))]),
+            (9, vec![((0, 0), (16384, 0))]),
+            (10, vec![((0, 0), (131072, 0))]),
+        ]
+        .into_iter()
+        .map(|(id, raw_chunks)| {
+            let chunks = raw_chunks
+                .into_iter()
+                .map(|((a, b), (c, d))| {
+                    Chunk::new(
+                        bgzf::VirtualPosition::new(a, b).unwrap(),
+                        bgzf::VirtualPosition::new(c, d).unwrap(),
+                    )
+                })
+                .collect();
+
+            (id, Bin::new(chunks))
+        })
+        .collect();
+
+        let reference_sequence = ReferenceSequence::new(bins, Vec::new(), None);
+        let actual = reference_sequence.optimize();
+
+        let expected_bins: IndexMap<_, _> = [
+            (
+                10,
+                Bin::new(vec![Chunk::new(
+                    const { bgzf::VirtualPosition::new(0, 0).unwrap() },
+                    const { bgzf::VirtualPosition::new(131072, 0).unwrap() },
+                )]),
+            ),
+            (
+                2,
+                Bin::new(vec![Chunk::new(
+                    const { bgzf::VirtualPosition::new(0, 0).unwrap() },
+                    const { bgzf::VirtualPosition::new(131072, 0).unwrap() },
+                )]),
+            ),
+            (
+                0,
+                Bin::new(vec![Chunk::new(
+                    const { bgzf::VirtualPosition::new(0, 0).unwrap() },
+                    const { bgzf::VirtualPosition::new(32768, 0).unwrap() },
+                )]),
+            ),
+        ]
+        .into_iter()
+        .collect();
+
+        assert_eq!(actual.bins, expected_bins);
     }
 
     #[test]
