@@ -13,13 +13,7 @@ pub(super) fn write_reference_sequence_names<W>(
 where
     W: Write,
 {
-    // Add 1 for each trailing NUL.
-    let len = reference_sequence_names
-        .iter()
-        .map(|n| n.len() + 1)
-        .sum::<usize>();
-    let l_nm = i32::try_from(len).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
-    write_i32_le(writer, l_nm)?;
+    write_reference_sequence_names_size(writer, reference_sequence_names)?;
 
     for reference_sequence_name in reference_sequence_names {
         if !is_valid(reference_sequence_name.as_ref()) {
@@ -34,6 +28,27 @@ where
     }
 
     Ok(())
+}
+
+fn write_reference_sequence_names_size<W>(
+    writer: &mut W,
+    reference_sequence_names: &ReferenceSequenceNames,
+) -> io::Result<()>
+where
+    W: Write,
+{
+    let len = size_of_reference_sequence_names(reference_sequence_names);
+    let n = i32::try_from(len).map_err(|e| io::Error::new(io::ErrorKind::InvalidInput, e))?;
+    write_i32_le(writer, n)
+}
+
+fn size_of_reference_sequence_names(reference_sequence_names: &ReferenceSequenceNames) -> usize {
+    const SIZE_OF_NUL: usize = size_of::<u8>();
+
+    reference_sequence_names
+        .iter()
+        .map(|n| n.len() + SIZE_OF_NUL)
+        .sum::<usize>()
 }
 
 fn is_valid(s: &BStr) -> bool {
@@ -88,5 +103,28 @@ mod tests {
         ));
 
         Ok(())
+    }
+
+    #[test]
+    fn test_size_of_reference_sequence_names() {
+        let reference_sequence_names = ReferenceSequenceNames::default();
+        assert_eq!(
+            size_of_reference_sequence_names(&reference_sequence_names),
+            0
+        );
+
+        let reference_sequence_names = [BString::from("sq0")].into_iter().collect();
+        assert_eq!(
+            size_of_reference_sequence_names(&reference_sequence_names),
+            4
+        );
+
+        let reference_sequence_names = [BString::from("sq0"), BString::from("sq1")]
+            .into_iter()
+            .collect();
+        assert_eq!(
+            size_of_reference_sequence_names(&reference_sequence_names),
+            8
+        );
     }
 }
