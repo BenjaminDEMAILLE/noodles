@@ -26,14 +26,15 @@ fn decode(n: i32) -> Result<Format, ReadError> {
     const SAM_FORMAT_VALUE: i32 = 0x01;
     const VCF_FORMAT_VALUE: i32 = 0x02;
 
-    match n & FORMAT_MASK {
-        GENERIC_FORMAT_VALUE => match n >> COORDINATE_SYSTEM_SHIFT {
-            ONE_BASED_COORDINATE_SYSTEM_VALUE => Ok(Format::Generic(CoordinateSystem::Gff)),
-            ZERO_BASED_COORDINATE_SYSTEM_VALUE => Ok(Format::Generic(CoordinateSystem::Bed)),
-            _ => Err(ReadError::Invalid(n)),
-        },
-        SAM_FORMAT_VALUE => Ok(Format::Sam),
-        VCF_FORMAT_VALUE => Ok(Format::Vcf),
+    match (n >> COORDINATE_SYSTEM_SHIFT, n & FORMAT_MASK) {
+        (ONE_BASED_COORDINATE_SYSTEM_VALUE, GENERIC_FORMAT_VALUE) => {
+            Ok(Format::Generic(CoordinateSystem::Gff))
+        }
+        (ZERO_BASED_COORDINATE_SYSTEM_VALUE, GENERIC_FORMAT_VALUE) => {
+            Ok(Format::Generic(CoordinateSystem::Bed))
+        }
+        (ONE_BASED_COORDINATE_SYSTEM_VALUE, SAM_FORMAT_VALUE) => Ok(Format::Sam),
+        (ONE_BASED_COORDINATE_SYSTEM_VALUE, VCF_FORMAT_VALUE) => Ok(Format::Vcf),
         _ => Err(ReadError::Invalid(n)),
     }
 }
@@ -77,6 +78,8 @@ mod tests {
         assert_eq!(decode(0x00000002)?, Format::Vcf);
 
         assert!(matches!(decode(0x00020000), Err(ReadError::Invalid(_))));
+        assert!(matches!(decode(0x00010001), Err(ReadError::Invalid(_))));
+        assert!(matches!(decode(0x00010002), Err(ReadError::Invalid(_))));
         assert!(matches!(decode(0x00000003), Err(ReadError::Invalid(_))));
 
         Ok(())

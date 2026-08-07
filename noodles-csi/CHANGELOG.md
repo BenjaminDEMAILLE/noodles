@@ -9,6 +9,11 @@
     Small bins are now merged into its parent on build. This is an optimization
     for size, and previously built indices remain correct.
 
+  * csi/io/reader/index/header/format: Reject invalid coordinate system for
+    SAM and VCF formats.
+
+    These formats both inherently use the 1-based coordinate system.
+
 [#406]: https://github.com/zaeleus/noodles/pull/406
 
 ### Removed
