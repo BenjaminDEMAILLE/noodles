@@ -13,7 +13,8 @@
 
 ### Removed
 
-  * csi/binning_index/index/header/format: Remove conversion to and from `i32`.
+  * csi/binning_index/index/header/format: Remove conversions to and from `i32`
+    for `Format` and `CoordinateSystem`.
 
     Deserialization and serialization is now the responsibility of the reader
     and writer, respectively.

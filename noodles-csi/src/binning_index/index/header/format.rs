@@ -1,6 +1,6 @@
 //! Tabix index header format and coordinate system.
 
-pub mod coordinate_system;
+mod coordinate_system;
 
 pub use self::coordinate_system::CoordinateSystem;
 
