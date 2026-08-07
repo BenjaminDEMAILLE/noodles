@@ -13,9 +13,10 @@
 
 ### Removed
 
-  * csi/binning_index/index/header/format: Remove conversion to `i32`.
+  * csi/binning_index/index/header/format: Remove conversion to and from `i32`.
 
-    Serialization is now the responsibility of the writer.
+    Deserialization and serialization is now the responsibility of the reader
+    and writer, respectively.
 
 ## 0.60.0 - 2026-08-03
 
