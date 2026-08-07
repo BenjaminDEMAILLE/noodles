@@ -139,4 +139,10 @@ mod tests {
             8
         );
     }
+
+    #[test]
+    fn test_is_valid() {
+        assert!(is_valid(b"sq0".as_bstr()));
+        assert!(!is_valid(b"sq\x000".as_bstr()));
+    }
 }
