@@ -11,6 +11,12 @@
 
 [#406]: https://github.com/zaeleus/noodles/pull/406
 
+### Removed
+
+  * csi/binning_index/index/header/format: Remove conversion to `i32`.
+
+    Serialization is now the responsibility of the writer.
+
 ## 0.60.0 - 2026-08-03
 
 ### Changed

@@ -89,18 +89,6 @@ impl TryFrom<i32> for Format {
     }
 }
 
-impl From<Format> for i32 {
-    fn from(format: Format) -> Self {
-        match format {
-            Format::Generic(coordinate_system) => {
-                i32::from(u16::from(coordinate_system)) << COORDINATE_SYSTEM_SHIFT
-            }
-            Format::Sam => 1,
-            Format::Vcf => 2,
-        }
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -121,13 +109,5 @@ mod tests {
         assert_eq!(Format::try_from(2), Ok(Format::Vcf));
 
         assert_eq!(Format::try_from(3), Err(TryFromIntError::InvalidKind(3)));
-    }
-
-    #[test]
-    fn test_from_format_for_i32() {
-        assert_eq!(i32::from(Format::Generic(CoordinateSystem::Bed)), 0x010000);
-        assert_eq!(i32::from(Format::Generic(CoordinateSystem::Gff)), 0);
-        assert_eq!(i32::from(Format::Sam), 1);
-        assert_eq!(i32::from(Format::Vcf), 2);
     }
 }
