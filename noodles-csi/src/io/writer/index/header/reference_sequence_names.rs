@@ -16,15 +16,7 @@ where
     write_reference_sequence_names_size(writer, reference_sequence_names)?;
 
     for reference_sequence_name in reference_sequence_names {
-        if !is_valid(reference_sequence_name.as_ref()) {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "invalid reference sequence name",
-            ));
-        }
-
-        writer.write_all(reference_sequence_name)?;
-        writer.write_all(&[NUL])?;
+        write_reference_sequence_name(writer, reference_sequence_name.as_ref())?;
     }
 
     Ok(())
@@ -49,6 +41,26 @@ fn size_of_reference_sequence_names(reference_sequence_names: &ReferenceSequence
         .iter()
         .map(|n| n.len() + SIZE_OF_NUL)
         .sum::<usize>()
+}
+
+fn write_reference_sequence_name<W>(
+    writer: &mut W,
+    reference_sequence_name: &BStr,
+) -> io::Result<()>
+where
+    W: Write,
+{
+    if !is_valid(reference_sequence_name) {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "invalid reference sequence name",
+        ));
+    }
+
+    writer.write_all(reference_sequence_name)?;
+    writer.write_all(&[NUL])?;
+
+    Ok(())
 }
 
 fn is_valid(s: &BStr) -> bool {
