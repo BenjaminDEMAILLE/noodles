@@ -8,7 +8,7 @@ use noodles_bgzf as bgzf;
 use self::chunks::write_chunks;
 use super::write_metadata;
 use crate::{
-    binning_index::index::reference_sequence::{Bin, Metadata, index::BinnedIndex, parent_id},
+    binning_index::index::reference_sequence::{Bin, Metadata, index::BinnedIndex},
     io::writer::num::{write_i32_le, write_u32_le, write_u64_le},
 };
 
@@ -74,20 +74,8 @@ where
     Ok(())
 }
 
-fn first_record_start_position(index: &BinnedIndex, mut id: usize) -> bgzf::VirtualPosition {
-    let mut min_position = index.get(&id).copied().unwrap_or_default();
-
-    while let Some(pid) = parent_id(id)
-        && let Some(position) = index.get(&pid)
-    {
-        if *position < min_position {
-            min_position = *position;
-        }
-
-        id = pid;
-    }
-
-    min_position
+fn first_record_start_position(index: &BinnedIndex, id: usize) -> bgzf::VirtualPosition {
+    index.get(&id).copied().unwrap_or_default()
 }
 
 #[cfg(test)]

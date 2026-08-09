@@ -343,7 +343,7 @@ where
 const M: usize = NonZero::new(8).unwrap().get();
 
 // parent of i = floor((i - 1) / M)
-pub(crate) fn parent_id(id: usize) -> Option<usize> {
+fn parent_id(id: usize) -> Option<usize> {
     if id > 0 { Some((id - 1) / M) } else { None }
 }
 
