@@ -16,6 +16,13 @@
 
 [#406]: https://github.com/zaeleus/noodles/pull/406
 
+### Fixed
+
+  * csi/binning_index/index/reference_sequence/index/linear_index: Use window
+    size based on min shift.
+
+    This previously only built a linear index for a min shift of 14.
+
 ### Removed
 
   * csi/binning_index/index/header/format: Remove conversions to and from `i32`
