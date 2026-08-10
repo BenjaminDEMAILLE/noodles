@@ -474,6 +474,30 @@ mod tests {
     }
 
     #[test]
+    fn test_chunks_minmax() {
+        let min_chunk = Chunk::new(
+            const { bgzf::VirtualPosition::new(5, 0).unwrap() },
+            const { bgzf::VirtualPosition::new(8, 0).unwrap() },
+        );
+
+        let max_chunk = Chunk::new(
+            const { bgzf::VirtualPosition::new(21, 0).unwrap() },
+            const { bgzf::VirtualPosition::new(34, 0).unwrap() },
+        );
+
+        let chunks = [
+            max_chunk,
+            min_chunk,
+            Chunk::new(
+                const { bgzf::VirtualPosition::new(13, 0).unwrap() },
+                const { bgzf::VirtualPosition::new(21, 0).unwrap() },
+            ),
+        ];
+
+        assert_eq!(chunks_minmax(&chunks), (min_chunk, max_chunk));
+    }
+
+    #[test]
     fn test_reg2bin() {
         const MIN_SHIFT: u8 = 4;
         const DEPTH: u8 = 2;
