@@ -12,7 +12,7 @@ pub(super) async fn write_bins<W>(
     writer: &mut W,
     depth: u8,
     bins: &IndexMap<usize, Bin>,
-    index: &IndexMap<usize, bgzf::VirtualPosition>,
+    index: &BinnedIndex,
     metadata: Option<&Metadata>,
 ) -> io::Result<()>
 where
