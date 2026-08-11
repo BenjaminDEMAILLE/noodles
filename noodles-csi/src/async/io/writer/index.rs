@@ -5,7 +5,7 @@ mod reference_sequences;
 use tokio::io::{self, AsyncWrite, AsyncWriteExt};
 
 use self::{
-    header::write_header, magic_number::write_magic_number,
+    header::write_aux, magic_number::write_magic_number,
     reference_sequences::write_reference_sequences,
 };
 use crate::{BinningIndex, Index};
@@ -16,7 +16,13 @@ where
 {
     write_magic_number(writer).await?;
 
-    write_header(writer, index.min_shift(), index.depth(), index.header()).await?;
+    let min_shift = i32::from(index.min_shift());
+    writer.write_i32_le(min_shift).await?;
+
+    let depth = i32::from(index.depth());
+    writer.write_i32_le(depth).await?;
+
+    write_aux(writer, index.header()).await?;
     write_reference_sequences(writer, index.depth(), index.reference_sequences()).await?;
 
     if let Some(n) = index.unplaced_unmapped_record_count() {
