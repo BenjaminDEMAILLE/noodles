@@ -6,7 +6,7 @@ pub(super) async fn read_magic_number<R>(reader: &mut R) -> io::Result<()>
 where
     R: AsyncRead + Unpin,
 {
-    let mut buf = [0; 4];
+    let mut buf = [0; MAGIC_NUMBER.len()];
     reader.read_exact(&mut buf).await?;
 
     if buf == MAGIC_NUMBER {
