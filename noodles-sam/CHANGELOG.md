@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+  * sam/record/data/field/value/base_modifications/group/modification: Allow
+    all uppercase alphabetic modification codes.
+
+    This previously only allowed lowercase letters and ambiguity codes (`C`,
+    `T`, `U`, `A`, `G`, and `N`). [samtools/hts-specs@510c107] expands it to
+    include all uppercase letters.
+
+[samtools/hts-specs@510c107]: https://github.com/samtools/hts-specs/commit/510c107ba89aa13113818c9e4fa3071283cb7f7b
+
 ## 0.89.0 - 2026-08-03
 
 ### Changed
