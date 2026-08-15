@@ -76,4 +76,26 @@ mod tests {
 
         Ok(())
     }
+
+    #[tokio::test]
+    async fn test_read_chunk() -> io::Result<()> {
+        let src = [
+            0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // chunk_beg = 8
+            0x0d, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, // chunk_end = 13
+        ];
+
+        let actual = read_chunk(&mut &src[..]).await?;
+        let expected = Chunk::new(
+            bgzf::VirtualPosition::from(8),
+            bgzf::VirtualPosition::from(13),
+        );
+        assert_eq!(actual, expected);
+
+        assert!(matches!(
+            read_chunk(&mut io::empty()).await,
+            Err(e) if e.kind() == io::ErrorKind::UnexpectedEof
+        ));
+
+        Ok(())
+    }
 }
