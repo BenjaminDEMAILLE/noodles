@@ -30,7 +30,7 @@
 
   * cram/io: Add buffered reader (`cram::io::BufReader`) ([#398]).
 
-    This is similiar to using the `Records` iterator but calling
+    This is similar to using the `Records` iterator but calling
     `Reader::read_record_buf` for each record instead.
 
 [#398]: https://github.com/zaeleus/noodles/issues/398
