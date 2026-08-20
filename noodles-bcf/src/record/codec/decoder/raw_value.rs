@@ -31,12 +31,13 @@ pub fn read_i16s(src: &mut &[u8], len: usize) -> Result<Vec<i16>, DecodeError> {
         .split_at_checked(len)
         .ok_or(DecodeError::UnexpectedEof)?;
 
-    let values = buf
-        .chunks_exact(mem::size_of::<i16>())
-        .map(|chunk| {
-            // SAFETY: `chunk` is 2 bytes.
-            i16::from_le_bytes(chunk.try_into().unwrap())
-        })
+    let (chunks, []) = buf.as_chunks() else {
+        unreachable!()
+    };
+
+    let values = chunks
+        .iter()
+        .map(|chunk| i16::from_le_bytes(*chunk))
         .collect();
 
     *src = rest;
@@ -57,12 +58,13 @@ pub fn read_i32s(src: &mut &[u8], len: usize) -> Result<Vec<i32>, DecodeError> {
         .split_at_checked(len)
         .ok_or(DecodeError::UnexpectedEof)?;
 
-    let values = buf
-        .chunks_exact(mem::size_of::<i32>())
-        .map(|chunk| {
-            // SAFETY: `chunk` is 4 bytes.
-            i32::from_le_bytes(chunk.try_into().unwrap())
-        })
+    let (chunks, []) = buf.as_chunks() else {
+        unreachable!();
+    };
+
+    let values = chunks
+        .iter()
+        .map(|chunk| i32::from_le_bytes(*chunk))
         .collect();
 
     *src = rest;
@@ -83,12 +85,13 @@ pub fn read_f32s(src: &mut &[u8], len: usize) -> Result<Vec<f32>, DecodeError> {
         .split_at_checked(len)
         .ok_or(DecodeError::UnexpectedEof)?;
 
-    let values = buf
-        .chunks_exact(mem::size_of::<f32>())
-        .map(|chunk| {
-            // SAFETY: `chunk` is 4 bytes.
-            f32::from_le_bytes(chunk.try_into().unwrap())
-        })
+    let (chunks, []) = buf.as_chunks() else {
+        unreachable!();
+    };
+
+    let values = chunks
+        .iter()
+        .map(|chunk| f32::from_le_bytes(*chunk))
         .collect();
 
     *src = rest;
