@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.57.0 - 2026-08-21
+
+### Changed
+
+  * gtf: Sync dependencies.
+
 ## 0.56.0 - 2026-08-03
 
 ### Changed
