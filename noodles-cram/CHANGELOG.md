@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+  * cram/io/reader/query: Include reference sequence ID when filtering records
+    ([#396]).
+
+[#396]: https://github.com/zaeleus/noodles/pull/396
+
 ## 0.99.0 - 2026-08-21
 
 ### Changed

@@ -86,7 +86,7 @@ where
         loop {
             match self.records.next() {
                 Some(r) => {
-                    if intersects(&r, self.interval) {
+                    if intersects(&r, self.reference_sequence_id, self.interval) {
                         *record = r;
                         return Ok(1);
                     }
@@ -194,12 +194,32 @@ where
     }
 }
 
-pub(crate) fn intersects(record: &sam::alignment::RecordBuf, region_interval: Interval) -> bool {
-    match (record.alignment_start(), record.alignment_end()) {
-        (Some(start), Some(end)) => {
-            let alignment_interval = (start..=end).into();
-            region_interval.intersects(alignment_interval)
-        }
-        _ => false,
+pub(crate) fn intersects(
+    record: &sam::alignment::RecordBuf,
+    reference_sequence_id: usize,
+    region_interval: Interval,
+) -> bool {
+    let Some(id) = record.reference_sequence_id() else {
+        return false;
+    };
+
+    if id != reference_sequence_id {
+        return false;
     }
+
+    if interval_is_unbounded(region_interval) {
+        true
+    } else {
+        match (record.alignment_start(), record.alignment_end()) {
+            (Some(start), Some(end)) => {
+                let alignment_interval = (start..=end).into();
+                region_interval.intersects(alignment_interval)
+            }
+            _ => false,
+        }
+    }
+}
+
+fn interval_is_unbounded(interval: Interval) -> bool {
+    interval.start().is_none() && interval.end().is_none()
 }

@@ -56,7 +56,7 @@ where
         loop {
             match self.records.next() {
                 Some(r) => {
-                    if intersects(&r, self.interval) {
+                    if intersects(&r, self.reference_sequence_id, self.interval) {
                         *record = r;
                         return Ok(1);
                     }
