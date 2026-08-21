@@ -194,7 +194,7 @@ where
     }
 }
 
-fn intersects(record: &sam::alignment::RecordBuf, region_interval: Interval) -> bool {
+pub(crate) fn intersects(record: &sam::alignment::RecordBuf, region_interval: Interval) -> bool {
     match (record.alignment_start(), record.alignment_end()) {
         (Some(start), Some(end)) => {
             let alignment_interval = (start..=end).into();
