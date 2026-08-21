@@ -8,7 +8,10 @@ use tokio::io::{self, AsyncRead, AsyncSeek};
 use super::Reader;
 use crate::{
     crai,
-    io::reader::{Container, query::intersects},
+    io::reader::{
+        Container,
+        query::{index_record_intersects, intersects},
+    },
 };
 
 /// An async reader over records of an async CRAM reader that intersects the given region.
@@ -92,7 +95,7 @@ where
 {
     let index_record = ctx.index.next()?;
 
-    if index_record.reference_sequence_id() != Some(ctx.reference_sequence_id) {
+    if !index_record_intersects(index_record, ctx.reference_sequence_id, ctx.interval) {
         return Some(Ok(()));
     }
 

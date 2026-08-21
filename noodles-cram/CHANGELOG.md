@@ -7,6 +7,9 @@
   * cram/io/reader/query: Include reference sequence ID when filtering records
     ([#396]).
 
+  * cram/io/reader/query: Include region interval when filtering containers
+    ([#396]).
+
 [#396]: https://github.com/zaeleus/noodles/pull/396
 
 ## 0.99.0 - 2026-08-21
