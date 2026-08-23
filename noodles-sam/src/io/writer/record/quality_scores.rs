@@ -1,23 +1,26 @@
 use std::io::{self, Write};
 
 use super::MISSING;
-use crate::alignment::record::QualityScores;
+use crate::alignment::record::{QualityScores, QualityScoresRef};
 
 const OFFSET: u8 = b'!';
 
-pub(super) fn write_quality_scores<W, S>(
+pub(super) fn write_quality_scores<W>(
     writer: &mut W,
     base_count: usize,
-    quality_scores: S,
+    quality_scores: QualityScoresRef<'_>,
 ) -> io::Result<()>
 where
     W: Write,
-    S: QualityScores,
 {
     if quality_scores.is_empty() {
         writer.write_all(&[MISSING])?;
     } else if quality_scores.len() == base_count {
-        write_generic_quality_scores(writer, quality_scores)?;
+        match quality_scores {
+            QualityScoresRef::Raw(s) => write_raw_quality_scores(writer, s)?,
+            QualityScoresRef::Offset(..) => todo!(),
+            QualityScoresRef::QualityScores(s) => write_generic_quality_scores(writer, s)?,
+        }
     } else {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -30,6 +33,23 @@ where
     }
 
     Ok(())
+}
+
+fn write_raw_quality_scores<W>(writer: &mut W, quality_scores: &[u8]) -> io::Result<()>
+where
+    W: Write,
+{
+    if quality_scores.iter().all(|&n| is_valid_score(n)) {
+        for n in quality_scores {
+            // SAFETY: `n` <= 93.
+            let m = n + OFFSET;
+            writer.write_all(&[m])?;
+        }
+
+        Ok(())
+    } else {
+        Err(io::Error::from(io::ErrorKind::InvalidInput))
+    }
 }
 
 fn write_generic_quality_scores<W, S>(writer: &mut W, quality_scores: S) -> io::Result<()>
@@ -71,7 +91,8 @@ mod tests {
             expected: &[u8],
         ) -> io::Result<()> {
             buf.clear();
-            write_quality_scores(buf, base_count, quality_scores)?;
+            let s = QualityScoresRef::QualityScores(Box::new(quality_scores));
+            write_quality_scores(buf, base_count, s)?;
             assert_eq!(buf, expected);
             Ok(())
         }
@@ -84,17 +105,38 @@ mod tests {
         let quality_scores = [45, 35, 43, 50].into_iter().collect();
         t(&mut buf, 4, &quality_scores, b"NDLS")?;
 
-        let quality_scores = [45, 35, 43, 50].into_iter().collect();
         buf.clear();
+        let quality_scores = [45, 35, 43, 50].into_iter().collect();
+        let s = QualityScoresRef::QualityScores(Box::new(&quality_scores));
         assert!(matches!(
-            write_quality_scores(&mut buf, 3, &quality_scores),
+            write_quality_scores(&mut buf, 3, s),
             Err(e) if e.kind() == io::ErrorKind::InvalidInput
         ));
 
-        let quality_scores = [255].into_iter().collect();
         buf.clear();
+        let quality_scores = [255].into_iter().collect();
+        let s = QualityScoresRef::QualityScores(Box::new(&quality_scores));
         assert!(matches!(
-            write_quality_scores(&mut buf, 1, &quality_scores),
+            write_quality_scores(&mut buf, 1, s),
+            Err(e) if e.kind() == io::ErrorKind::InvalidInput
+        ));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_write_raw_quality_scores() -> io::Result<()> {
+        let mut buf = Vec::new();
+
+        buf.clear();
+        let quality_scores = [45, 35, 43, 50];
+        write_raw_quality_scores(&mut buf, &quality_scores)?;
+        assert_eq!(buf, b"NDLS");
+
+        buf.clear();
+        let quality_scores = [255];
+        assert!(matches!(
+            write_raw_quality_scores(&mut buf, &quality_scores),
             Err(e) if e.kind() == io::ErrorKind::InvalidInput
         ));
 
