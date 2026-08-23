@@ -17,17 +17,7 @@ where
     if quality_scores.is_empty() {
         writer.write_all(&[MISSING])?;
     } else if quality_scores.len() == base_count {
-        for result in quality_scores.iter() {
-            let n = result?;
-
-            if is_valid_score(n) {
-                // SAFETY: `n` <= 93.
-                let m = n + OFFSET;
-                writer.write_all(&[m])?;
-            } else {
-                return Err(io::Error::from(io::ErrorKind::InvalidInput));
-            }
-        }
+        write_generic_quality_scores(writer, quality_scores)?;
     } else {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -37,6 +27,26 @@ where
                 quality_scores.len()
             ),
         ));
+    }
+
+    Ok(())
+}
+
+fn write_generic_quality_scores<W, S>(writer: &mut W, quality_scores: S) -> io::Result<()>
+where
+    W: Write,
+    S: QualityScores,
+{
+    for result in quality_scores.iter() {
+        let n = result?;
+
+        if is_valid_score(n) {
+            // SAFETY: `n` <= 93.
+            let m = n + OFFSET;
+            writer.write_all(&[m])?;
+        } else {
+            return Err(io::Error::from(io::ErrorKind::InvalidInput));
+        }
     }
 
     Ok(())
