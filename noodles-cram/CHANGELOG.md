@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+### Changed
+
+  * cram: Update to lzma-rust2 0.20.0.
+
 ### Fixed
 
   * cram/io/reader/query: Include reference sequence ID when filtering records
