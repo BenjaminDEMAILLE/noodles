@@ -18,7 +18,7 @@ where
     } else if quality_scores.len() == base_count {
         match quality_scores {
             QualityScoresRef::Raw(s) => write_raw_quality_scores(writer, s)?,
-            QualityScoresRef::Offset(..) => todo!(),
+            QualityScoresRef::Offset(s, offset) => write_offset_quality_scores(writer, s, offset)?,
             QualityScoresRef::QualityScores(s) => write_generic_quality_scores(writer, s)?,
         }
     } else {
@@ -50,6 +50,31 @@ where
     } else {
         Err(io::Error::from(io::ErrorKind::InvalidInput))
     }
+}
+
+fn write_offset_quality_scores<W>(
+    writer: &mut W,
+    quality_scores: &[u8],
+    offset: u8,
+) -> io::Result<()>
+where
+    W: Write,
+{
+    for n in quality_scores {
+        let mut m = n
+            .checked_sub(offset)
+            .ok_or_else(|| io::Error::from(io::ErrorKind::InvalidInput))?;
+
+        if is_valid_score(m) {
+            // SAFETY: `m` <= 93.
+            m += OFFSET;
+            writer.write_all(&[m])?;
+        } else {
+            return Err(io::Error::from(io::ErrorKind::InvalidInput));
+        }
+    }
+
+    Ok(())
 }
 
 fn write_generic_quality_scores<W, S>(writer: &mut W, quality_scores: S) -> io::Result<()>
@@ -118,6 +143,25 @@ mod tests {
         let s = QualityScoresRef::QualityScores(Box::new(&quality_scores));
         assert!(matches!(
             write_quality_scores(&mut buf, 1, s),
+            Err(e) if e.kind() == io::ErrorKind::InvalidInput
+        ));
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_write_offset_quality_scores() -> io::Result<()> {
+        let mut buf = Vec::new();
+
+        buf.clear();
+        let (quality_scores, offset) = (b"NDLS", b'!');
+        write_offset_quality_scores(&mut buf, quality_scores, offset)?;
+        assert_eq!(buf, b"NDLS");
+
+        buf.clear();
+        let quality_scores = [255];
+        assert!(matches!(
+            write_offset_quality_scores(&mut buf, &quality_scores, offset),
             Err(e) if e.kind() == io::ErrorKind::InvalidInput
         ));
 
