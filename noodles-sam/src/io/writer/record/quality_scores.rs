@@ -40,9 +40,8 @@ where
     W: Write,
 {
     if quality_scores.iter().all(|&n| is_valid_score(n)) {
-        for n in quality_scores {
-            // SAFETY: `n` <= 93.
-            let m = n + OFFSET;
+        for &n in quality_scores {
+            let m = encode(n);
             writer.write_all(&[m])?;
         }
 
@@ -61,14 +60,12 @@ where
     W: Write,
 {
     for n in quality_scores {
-        let mut m = n
+        let m = n
             .checked_sub(offset)
             .ok_or_else(|| io::Error::from(io::ErrorKind::InvalidInput))?;
 
         if is_valid_score(m) {
-            // SAFETY: `m` <= 93.
-            m += OFFSET;
-            writer.write_all(&[m])?;
+            writer.write_all(&[encode(m)])?;
         } else {
             return Err(io::Error::from(io::ErrorKind::InvalidInput));
         }
@@ -86,8 +83,7 @@ where
         let n = result?;
 
         if is_valid_score(n) {
-            // SAFETY: `n` <= 93.
-            let m = n + OFFSET;
+            let m = encode(n);
             writer.write_all(&[m])?;
         } else {
             return Err(io::Error::from(io::ErrorKind::InvalidInput));
@@ -100,6 +96,10 @@ where
 fn is_valid_score(score: u8) -> bool {
     const MAX_SCORE: u8 = b'~' - OFFSET;
     score <= MAX_SCORE
+}
+
+fn encode(n: u8) -> u8 {
+    n + OFFSET
 }
 
 #[cfg(test)]
@@ -185,5 +185,11 @@ mod tests {
         ));
 
         Ok(())
+    }
+
+    #[test]
+    fn test_encode() {
+        assert_eq!(encode(0), b'!');
+        assert_eq!(encode(93), b'~');
     }
 }
