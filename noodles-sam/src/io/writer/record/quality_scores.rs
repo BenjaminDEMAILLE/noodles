@@ -59,15 +59,27 @@ fn write_offset_quality_scores<W>(
 where
     W: Write,
 {
-    for n in quality_scores {
-        let m = n
-            .checked_sub(offset)
-            .ok_or_else(|| io::Error::from(io::ErrorKind::InvalidInput))?;
+    match offset {
+        0 => write_raw_quality_scores(writer, quality_scores)?,
+        OFFSET => {
+            if quality_scores.iter().all(|&n| is_valid_encoded_score(n)) {
+                writer.write_all(quality_scores)?;
+            } else {
+                return Err(io::Error::from(io::ErrorKind::InvalidInput));
+            }
+        }
+        _ => {
+            for n in quality_scores {
+                let m = n
+                    .checked_sub(offset)
+                    .ok_or_else(|| io::Error::from(io::ErrorKind::InvalidInput))?;
 
-        if is_valid_score(m) {
-            writer.write_all(&[encode(m)])?;
-        } else {
-            return Err(io::Error::from(io::ErrorKind::InvalidInput));
+                if is_valid_score(m) {
+                    writer.write_all(&[encode(m)])?;
+                } else {
+                    return Err(io::Error::from(io::ErrorKind::InvalidInput));
+                }
+            }
         }
     }
 
@@ -96,6 +108,13 @@ where
 fn is_valid_score(score: u8) -> bool {
     const MAX_SCORE: u8 = b'~' - OFFSET;
     score <= MAX_SCORE
+}
+
+fn is_valid_encoded_score(n: u8) -> bool {
+    const MIN: u8 = OFFSET;
+    const MAX: u8 = b'~';
+
+    (MIN..=MAX).contains(&n)
 }
 
 fn encode(n: u8) -> u8 {
@@ -154,14 +173,21 @@ mod tests {
         let mut buf = Vec::new();
 
         buf.clear();
-        let (quality_scores, offset) = (b"NDLS", b'!');
-        write_offset_quality_scores(&mut buf, quality_scores, offset)?;
+        write_offset_quality_scores(&mut buf, &[45, 35, 43, 50], 0)?;
+        assert_eq!(buf, b"NDLS");
+
+        buf.clear();
+        write_offset_quality_scores(&mut buf, b"NDLS", b'!')?;
+        assert_eq!(buf, b"NDLS");
+
+        buf.clear();
+        write_offset_quality_scores(&mut buf, &[46, 36, 44, 51], 1)?;
         assert_eq!(buf, b"NDLS");
 
         buf.clear();
         let quality_scores = [255];
         assert!(matches!(
-            write_offset_quality_scores(&mut buf, &quality_scores, offset),
+            write_offset_quality_scores(&mut buf, &quality_scores, OFFSET),
             Err(e) if e.kind() == io::ErrorKind::InvalidInput
         ));
 
