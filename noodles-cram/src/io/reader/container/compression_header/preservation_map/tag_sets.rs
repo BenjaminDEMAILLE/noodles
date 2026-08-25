@@ -67,6 +67,25 @@ mod tests {
     use super::*;
 
     #[test]
+    fn test_read_tag_sets_inner() -> io::Result<()> {
+        assert!(read_tag_sets_inner(&mut &[][..])?.is_empty());
+
+        let x1 = Key::new(Tag::new(b'X', b'1'), Type::UInt8);
+        let bc = Key::new(Tag::new(b'B', b'C'), Type::String);
+        let sa = Key::new(Tag::new(b'S', b'A'), Type::String);
+
+        assert_eq!(read_tag_sets_inner(&mut &b"X1C\x00"[..])?, vec![vec![x1]]);
+
+        // _CRAM format specification (version 3.1)_ (2025-06-04) § 8.4.3 "Tag encodings"
+        assert_eq!(
+            read_tag_sets_inner(&mut &b"X1CBCZSAZ\x00X1CBCZ\x00"[..])?,
+            vec![vec![x1, bc, sa], vec![x1, bc]]
+        );
+
+        Ok(())
+    }
+
+    #[test]
     fn test_decode_type() -> io::Result<()> {
         assert_eq!(decode_type(b'A')?, Type::Character);
         assert_eq!(decode_type(b'c')?, Type::Int8);
