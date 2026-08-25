@@ -22,8 +22,6 @@ fn read_tag_sets_inner(src: &mut &[u8]) -> io::Result<TagSets> {
 
         *src = &rest[1..];
 
-        let mut line = Vec::new();
-
         let (chunks, []) = buf.as_chunks() else {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
@@ -31,13 +29,14 @@ fn read_tag_sets_inner(src: &mut &[u8]) -> io::Result<TagSets> {
             ));
         };
 
-        for [t0, t1, ty] in chunks {
-            let tag = Tag::new(*t0, *t1);
-            let ty = decode_type(*ty)?;
-            let key = Key::new(tag, ty);
-
-            line.push(key);
-        }
+        let line = chunks
+            .iter()
+            .map(|[b0, b1, b2]| {
+                let tag = Tag::new(*b0, *b1);
+                let ty = decode_type(*b2)?;
+                Ok(Key::new(tag, ty))
+            })
+            .collect::<io::Result<_>>()?;
 
         sets.push(line);
     }
