@@ -61,7 +61,10 @@ impl RecordBuf {
         dst_reference_sequence_name.push_str(src_reference_sequence_name);
 
         *self.variant_start_mut() = record.variant_start().transpose()?;
-        *self.ids_mut() = record.ids().iter().map(String::from).collect();
+
+        let dst_raw_ids = self.ids_mut().as_mut();
+        dst_raw_ids.clear();
+        dst_raw_ids.extend(record.ids().iter().map(String::from));
 
         let raw_reference_bases: Vec<_> =
             record.reference_bases().iter().collect::<io::Result<_>>()?;
@@ -132,6 +135,7 @@ mod tests {
         let record = RecordBuf::builder()
             .set_reference_sequence_name("sq0")
             .set_variant_start(Position::MIN)
+            .set_ids([String::from("nd0")].into_iter().collect())
             .set_reference_bases("A")
             .build();
 
