@@ -55,7 +55,11 @@ impl RecordBuf {
     where
         R: Record + ?Sized,
     {
-        *self.reference_sequence_name_mut() = record.reference_sequence_name(header)?.into();
+        let src_reference_sequence_name = record.reference_sequence_name(header)?;
+        let dst_reference_sequence_name = self.reference_sequence_name_mut();
+        dst_reference_sequence_name.clear();
+        dst_reference_sequence_name.push_str(src_reference_sequence_name);
+
         *self.variant_start_mut() = record.variant_start().transpose()?;
         *self.ids_mut() = record.ids().iter().map(String::from).collect();
 
