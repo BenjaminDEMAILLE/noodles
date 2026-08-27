@@ -66,10 +66,13 @@ impl RecordBuf {
         dst_raw_ids.clear();
         dst_raw_ids.extend(record.ids().iter().map(String::from));
 
-        let raw_reference_bases: Vec<_> =
-            record.reference_bases().iter().collect::<io::Result<_>>()?;
-        *self.reference_bases_mut() = String::from_utf8(raw_reference_bases)
-            .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
+        let dst_reference_bases = self.reference_bases_mut();
+        dst_reference_bases.clear();
+
+        for result in record.reference_bases().iter() {
+            let base = result?;
+            dst_reference_bases.push(char::from(base));
+        }
 
         let raw_alternate_bases: Vec<_> = record
             .alternate_bases()
