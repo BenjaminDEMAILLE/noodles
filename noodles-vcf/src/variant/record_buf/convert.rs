@@ -131,7 +131,6 @@ mod tests {
     use noodles_core::Position;
 
     use super::*;
-    use crate::variant::record_buf::AlternateBases;
 
     #[test]
     fn test_try_clone_from_variant_record() -> io::Result<()> {
@@ -142,7 +141,7 @@ mod tests {
             .set_variant_start(Position::MIN)
             .set_ids([String::from("nd0")].into_iter().collect())
             .set_reference_bases("A")
-            .set_alternate_bases(AlternateBases::from(vec![String::from("C")]))
+            .set_alternate_bases([String::from("C")].into_iter().collect())
             .build();
 
         let mut dst = RecordBuf::default();

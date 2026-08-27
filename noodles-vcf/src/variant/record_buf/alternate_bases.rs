@@ -28,6 +28,14 @@ impl From<Vec<String>> for AlternateBases {
     }
 }
 
+impl FromIterator<String> for AlternateBases {
+    fn from_iter<T: IntoIterator<Item = String>>(iter: T) -> Self {
+        let mut alternate_bases = Self::default();
+        alternate_bases.extend(iter);
+        alternate_bases
+    }
+}
+
 impl crate::variant::record::AlternateBases for AlternateBases {
     fn is_empty(&self) -> bool {
         self.0.is_empty()
