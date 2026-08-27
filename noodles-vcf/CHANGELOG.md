@@ -8,6 +8,8 @@
     `RecordBuf::try_clone_from_variant_record` to clone a
     `vcf::alignment::Record` into an existing `RecordBuf`.
 
+  * vcf/variant/record_buf/alternate_bases: Implement `Extend<String>`.
+
 ## 0.93.0 - 2026-08-21
 
 ### Changed
