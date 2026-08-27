@@ -84,11 +84,13 @@ impl RecordBuf {
 
         *self.quality_score_mut() = record.quality_score().transpose()?;
 
-        *self.filters_mut() = record
-            .filters()
-            .iter(header)
-            .map(|result| result.map(String::from))
-            .collect::<io::Result<_>>()?;
+        let dst_filters = self.filters_mut().as_mut();
+        dst_filters.clear();
+
+        for result in record.filters().iter(header) {
+            let filter = result?;
+            dst_filters.insert(filter.into());
+        }
 
         *self.info_mut() = record
             .info()
@@ -131,6 +133,7 @@ mod tests {
     use noodles_core::Position;
 
     use super::*;
+    use crate::variant::record_buf::Filters;
 
     #[test]
     fn test_try_clone_from_variant_record() -> io::Result<()> {
@@ -142,6 +145,7 @@ mod tests {
             .set_ids([String::from("nd0")].into_iter().collect())
             .set_reference_bases("A")
             .set_alternate_bases([String::from("C")].into_iter().collect())
+            .set_filters(Filters::pass())
             .build();
 
         let mut dst = RecordBuf::default();
