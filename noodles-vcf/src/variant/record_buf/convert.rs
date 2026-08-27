@@ -74,12 +74,13 @@ impl RecordBuf {
             dst_reference_bases.push(char::from(base));
         }
 
-        let raw_alternate_bases: Vec<_> = record
-            .alternate_bases()
-            .iter()
-            .map(|result| result.map(String::from))
-            .collect::<io::Result<_>>()?;
-        *self.alternate_bases_mut() = raw_alternate_bases.into();
+        let dst_alternate_bases = self.alternate_bases_mut().as_mut();
+        dst_alternate_bases.clear();
+
+        for result in record.alternate_bases().iter() {
+            let base = result?;
+            dst_alternate_bases.push(base.into());
+        }
 
         *self.quality_score_mut() = record.quality_score().transpose()?;
 
@@ -130,6 +131,7 @@ mod tests {
     use noodles_core::Position;
 
     use super::*;
+    use crate::variant::record_buf::AlternateBases;
 
     #[test]
     fn test_try_clone_from_variant_record() -> io::Result<()> {
@@ -140,6 +142,7 @@ mod tests {
             .set_variant_start(Position::MIN)
             .set_ids([String::from("nd0")].into_iter().collect())
             .set_reference_bases("A")
+            .set_alternate_bases(AlternateBases::from(vec![String::from("C")]))
             .build();
 
         let mut dst = RecordBuf::default();
