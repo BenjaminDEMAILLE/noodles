@@ -92,16 +92,14 @@ impl RecordBuf {
             dst_filters.insert(filter.into());
         }
 
-        *self.info_mut() = record
-            .info()
-            .iter(header)
-            .map(|result| {
-                result.and_then(|(key, value)| {
-                    let v = value.map(|v| v.try_into()).transpose()?;
-                    Ok((String::from(key), v))
-                })
-            })
-            .collect::<io::Result<_>>()?;
+        let dst_info = self.info_mut().as_mut();
+        dst_info.clear();
+
+        for result in record.info().iter(header) {
+            let (key, value) = result?;
+            let v = value.map(|v| v.try_into()).transpose()?;
+            dst_info.insert(key.into(), v);
+        }
 
         let samples = record.samples()?;
 
@@ -133,7 +131,9 @@ mod tests {
     use noodles_core::Position;
 
     use super::*;
-    use crate::variant::record_buf::Filters;
+    use crate::variant::{
+        record::info, record_buf::Filters, record_buf::info::field::Value as InfoValueBuf,
+    };
 
     #[test]
     fn test_try_clone_from_variant_record() -> io::Result<()> {
@@ -146,6 +146,14 @@ mod tests {
             .set_reference_bases("A")
             .set_alternate_bases([String::from("C")].into_iter().collect())
             .set_filters(Filters::pass())
+            .set_info(
+                [(
+                    String::from(info::field::key::SAMPLES_WITH_DATA_COUNT),
+                    Some(InfoValueBuf::Integer(3)),
+                )]
+                .into_iter()
+                .collect(),
+            )
             .build();
 
         let mut dst = RecordBuf::default();
