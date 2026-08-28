@@ -1,6 +1,6 @@
 use std::io;
 
-use super::{RecordBuf, Samples};
+use super::RecordBuf;
 use crate::{Header, variant::Record};
 
 impl RecordBuf {
@@ -101,26 +101,28 @@ impl RecordBuf {
             dst_info.insert(key.into(), v);
         }
 
-        let samples = record.samples()?;
+        let src_samples = record.samples()?;
+        let dst_samples = self.samples_mut();
 
-        let keys = samples
-            .column_names(header)
-            .map(|result| result.map(String::from))
-            .collect::<io::Result<_>>()?;
+        let dst_samples_keys = dst_samples.keys_mut().as_mut();
+        dst_samples_keys.clear();
 
-        let values = samples
-            .iter()
-            .map(|sample| {
-                sample
-                    .iter(header)
-                    .map(|result| {
-                        result.and_then(|(_, value)| value.map(|v| v.try_into()).transpose())
-                    })
-                    .collect()
-            })
-            .collect::<io::Result<_>>()?;
+        for result in src_samples.column_names(header) {
+            let key = result?;
+            dst_samples_keys.insert(key.into());
+        }
 
-        *self.samples_mut() = Samples::new(keys, values);
+        let dst_samples_values = &mut dst_samples.values;
+        dst_samples_values.clear();
+
+        for src_sample in src_samples.iter() {
+            let dst_sample = src_sample
+                .iter(header)
+                .map(|result| result.and_then(|(_, value)| value.map(|v| v.try_into()).transpose()))
+                .collect::<io::Result<_>>()?;
+
+            dst_samples_values.push(dst_sample);
+        }
 
         Ok(())
     }
@@ -132,12 +134,22 @@ mod tests {
 
     use super::*;
     use crate::variant::{
-        record::info, record_buf::Filters, record_buf::info::field::Value as InfoValueBuf,
+        record::{info, samples},
+        record_buf::{
+            Filters, Samples, info::field::Value as InfoValueBuf,
+            samples::sample::Value as SampleValueBuf,
+        },
     };
 
     #[test]
     fn test_try_clone_from_variant_record() -> io::Result<()> {
-        let header = Header::default();
+        let header = Header::builder().add_sample_name("s0").build();
+
+        let keys = [String::from(samples::keys::key::GENOTYPE)]
+            .into_iter()
+            .collect();
+
+        let samples = Samples::new(keys, vec![vec![Some(SampleValueBuf::from("0|0"))]]);
 
         let record = RecordBuf::builder()
             .set_reference_sequence_name("sq0")
@@ -154,6 +166,7 @@ mod tests {
                 .into_iter()
                 .collect(),
             )
+            .set_samples(samples)
             .build();
 
         let mut dst = RecordBuf::default();
