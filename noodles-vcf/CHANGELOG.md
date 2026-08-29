@@ -11,6 +11,12 @@
   * vcf/variant/record_buf/alternate_bases: Implement `Extend<String>` and
     `FromIterator<String>`.
 
+### Changed
+
+  * vcf/record/samples/series/value/genotype: Return error on empty input.
+
+    Empty inputs now return `io::ErrorKind::UnexpectedEof`.
+
 ## 0.93.0 - 2026-08-21
 
 ### Changed

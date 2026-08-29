@@ -16,7 +16,11 @@ impl crate::variant::record::samples::series::value::Genotype for Genotype<'_> {
     fn iter(&self) -> Box<dyn Iterator<Item = io::Result<(Option<usize>, Phasing)>> + '_> {
         let mut src = self.0;
 
-        let first_allele_result = parse_first_allele(&mut src);
+        let first_allele_result = if src.is_empty() {
+            Err(io::Error::from(io::ErrorKind::UnexpectedEof))
+        } else {
+            parse_first_allele(&mut src)
+        };
 
         Box::new(
             iter::once(first_allele_result).chain(iter::from_fn(move || {
@@ -144,6 +148,12 @@ mod tests {
             "./.",
             &[(None, Phasing::Unphased), (None, Phasing::Unphased)],
         )?;
+
+        let genotype = Genotype::new("");
+        assert!(matches!(
+            genotype.iter().collect::<io::Result<Vec<_>>>(),
+            Err(e) if e.kind() == io::ErrorKind::UnexpectedEof
+        ));
 
         Ok(())
     }
