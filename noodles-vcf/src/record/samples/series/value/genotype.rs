@@ -1,6 +1,6 @@
 use std::{io, iter};
 
-use memchr::memchr;
+use memchr::{memchr, memchr2};
 
 use crate::variant::record::samples::series::value::genotype::Phasing;
 
@@ -78,21 +78,11 @@ fn parse_allele(src: &mut &str) -> io::Result<(Option<usize>, Phasing)> {
 }
 
 fn next_allele<'a>(src: &mut &'a str) -> &'a str {
-    let (buf, rest) = match src.chars().skip(1).position(is_phasing_indicator) {
-        Some(i) => src.split_at(i + 1),
-        None => src.split_at(src.len()),
-    };
-
+    let s = &src.as_bytes()[1..];
+    let i = memchr2(b'|', b'/', s).map(|i| i + 1).unwrap_or(src.len());
+    let (buf, rest) = src.split_at(i);
     *src = rest;
-
     buf
-}
-
-fn is_phasing_indicator(c: char) -> bool {
-    const PHASED: char = '|';
-    const UNPHASED: char = '/';
-
-    matches!(c, PHASED | UNPHASED)
 }
 
 fn parse_phasing(src: &str) -> io::Result<Phasing> {
@@ -189,5 +179,17 @@ mod tests {
         assert!(!is_implicitly_unphased("0"));
         assert!(!is_implicitly_unphased("0|0"));
         assert!(is_implicitly_unphased("0/0"));
+    }
+
+    #[test]
+    fn test_next_allele() {
+        let mut src = "0";
+        assert_eq!(next_allele(&mut src), "0");
+        assert!(src.is_empty());
+
+        let mut src = "|0/0";
+        assert_eq!(next_allele(&mut src), "|0");
+        assert_eq!(next_allele(&mut src), "/0");
+        assert!(src.is_empty());
     }
 }
