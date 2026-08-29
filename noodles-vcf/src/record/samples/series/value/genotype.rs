@@ -1,5 +1,7 @@
 use std::{io, iter};
 
+use memchr::memchr;
+
 use crate::variant::record::samples::series::value::genotype::Phasing;
 
 /// VCF record samples series genotype value.
@@ -39,12 +41,7 @@ fn parse_first_allele(src: &mut &str) -> io::Result<(Option<usize>, Phasing)> {
 
     let phasing = if let Some(s) = split_off_explicit_phasing(&mut buf) {
         parse_phasing(s)?
-    } else if src
-        .as_bytes()
-        .iter()
-        .filter(|&&b| matches!(b, b'|' | b'/'))
-        .any(|&b| b == b'/')
-    {
+    } else if is_implicitly_unphased(src) {
         Phasing::Unphased
     } else {
         Phasing::Phased
@@ -63,6 +60,12 @@ fn split_off_explicit_phasing<'a>(src: &mut &'a str) -> Option<&'a str> {
     } else {
         None
     }
+}
+
+// § 1.6.2 "Genotype fields" (2026-02-25): "The first phasing indicator may be omitted and is
+// implicitly defined as / if any phasing indicators are /..."
+fn is_implicitly_unphased(src: &str) -> bool {
+    memchr(b'/', src.as_bytes()).is_some()
 }
 
 fn parse_allele(src: &mut &str) -> io::Result<(Option<usize>, Phasing)> {
@@ -179,5 +182,12 @@ mod tests {
         let mut src = "0";
         assert!(split_off_explicit_phasing(&mut src).is_none());
         assert_eq!(src, "0");
+    }
+
+    #[test]
+    fn test_is_implicitly_unphased() {
+        assert!(!is_implicitly_unphased("0"));
+        assert!(!is_implicitly_unphased("0|0"));
+        assert!(is_implicitly_unphased("0/0"));
     }
 }
