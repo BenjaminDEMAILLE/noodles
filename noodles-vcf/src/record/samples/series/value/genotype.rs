@@ -37,10 +37,8 @@ impl crate::variant::record::samples::series::value::Genotype for Genotype<'_> {
 fn parse_first_allele(src: &mut &str) -> io::Result<(Option<usize>, Phasing)> {
     let mut buf = next_allele(src);
 
-    let phasing = if buf.starts_with(['|', '/']) {
-        let p = parse_phasing(&buf[..1])?;
-        buf = &buf[1..];
-        p
+    let phasing = if let Some(s) = split_off_explicit_phasing(&mut buf) {
+        parse_phasing(s)?
     } else if src
         .as_bytes()
         .iter()
@@ -55,6 +53,16 @@ fn parse_first_allele(src: &mut &str) -> io::Result<(Option<usize>, Phasing)> {
     let position = parse_position(buf)?;
 
     Ok((position, phasing))
+}
+
+fn split_off_explicit_phasing<'a>(src: &mut &'a str) -> Option<&'a str> {
+    if src.starts_with(['|', '/']) {
+        let (buf, rest) = src.split_at(1);
+        *src = rest;
+        Some(buf)
+    } else {
+        None
+    }
 }
 
 fn parse_allele(src: &mut &str) -> io::Result<(Option<usize>, Phasing)> {
@@ -156,5 +164,20 @@ mod tests {
         ));
 
         Ok(())
+    }
+
+    #[test]
+    fn test_split_off_explicit_phasing() {
+        let mut src = "|0";
+        assert_eq!(split_off_explicit_phasing(&mut src), Some("|"));
+        assert_eq!(src, "0");
+
+        let mut src = "/0";
+        assert_eq!(split_off_explicit_phasing(&mut src), Some("/"));
+        assert_eq!(src, "0");
+
+        let mut src = "0";
+        assert!(split_off_explicit_phasing(&mut src).is_none());
+        assert_eq!(src, "0");
     }
 }
