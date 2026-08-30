@@ -62,8 +62,7 @@ pub(super) fn parse(mut s: &str) -> Result<Genotype, ParseError> {
     let mut alleles = vec![Allele::new(first_position, first_phasing.phasing())];
 
     while !s.is_empty() {
-        let raw_allele = next_allele(&mut s);
-        let allele: Allele = raw_allele.parse().map_err(ParseError::InvalidAllele)?;
+        let allele = parse_allele(&mut s).map_err(ParseError::InvalidAllele)?;
 
         if first_phasing == FirstPhasing::Implicit(Phasing::Phased)
             && allele.phasing() == Phasing::Unphased
@@ -103,6 +102,11 @@ fn parse_first_allele(s: &str) -> Result<(Option<usize>, Option<Phasing>), allel
             }
         }
     }
+}
+
+fn parse_allele(src: &mut &str) -> Result<Allele, allele::ParseError> {
+    let buf = next_allele(src);
+    buf.parse()
 }
 
 #[cfg(test)]
