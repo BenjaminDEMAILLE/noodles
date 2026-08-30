@@ -1,5 +1,7 @@
 use std::{error, fmt};
 
+use memchr::memchr2;
+
 use super::{Allele, Genotype, allele};
 use crate::variant::record::samples::series::value::genotype::Phasing;
 
@@ -78,18 +80,11 @@ pub(super) fn parse(mut s: &str) -> Result<Genotype, ParseError> {
 }
 
 fn next_allele<'a>(s: &mut &'a str) -> &'a str {
-    let (t, rest) = match s.chars().skip(1).position(is_phasing_indicator) {
-        Some(i) => s.split_at(i + 1),
-        None => s.split_at(s.len()),
-    };
-
+    let src = &s.as_bytes()[1..];
+    let i = memchr2(b'|', b'/', src).map(|i| i + 1).unwrap_or(s.len());
+    let (buf, rest) = s.split_at(i);
     *s = rest;
-
-    t
-}
-
-fn is_phasing_indicator(c: char) -> bool {
-    matches!(c, '/' | '|')
+    buf
 }
 
 fn parse_first_allele(s: &str) -> Result<(Option<usize>, Option<Phasing>), allele::ParseError> {
@@ -107,5 +102,22 @@ fn parse_first_allele(s: &str) -> Result<(Option<usize>, Option<Phasing>), allel
                 Err(allele::ParseError::InvalidPhasing)
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_next_allele() {
+        let mut src = "0";
+        assert_eq!(next_allele(&mut src), "0");
+        assert!(src.is_empty());
+
+        let mut src = "|0/0";
+        assert_eq!(next_allele(&mut src), "|0");
+        assert_eq!(next_allele(&mut src), "/0");
+        assert!(src.is_empty());
     }
 }
